@@ -57,6 +57,19 @@
 /* FreeRTOS kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
+
+#include <SDL.h>
+#include <SDL_image.h>
+
+#include "cars.h"
+
+
+SemaphoreHandle_t s_interface;
+
+Car cars[5];
+int car_count;
+
 
 /* This project provides two demo applications.  A simple blinky style demo
 application, and a more comprehensive test and demo application.  The
@@ -135,6 +148,104 @@ static BaseType_t xTraceRunning = pdTRUE;
 /*-----------------------------------------------------------*/
 
 
+void run_sdl_interface(void* arg) {
+	// Inicializa a SDL
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		printf("Erro ao inicializar SDL: %s\n", SDL_GetError());
+		return;
+	}
+
+	if (!(IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG))) {
+		printf("Erro ao inicializar SDL_image: %s\n", IMG_GetError());
+		SDL_Quit();
+		return NULL;
+	}
+
+	// Cria uma janela
+	SDL_Window* window = SDL_CreateWindow("Simulação de Rua", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 720, 720, SDL_WINDOW_SHOWN);
+	if (!window) {
+		printf("Erro ao criar janela: %s\n", SDL_GetError());
+		SDL_Quit();
+		return;
+	}
+
+	// Cria um renderizador
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	if (!renderer) {
+		printf("Erro ao criar renderizador: %s\n", SDL_GetError());
+		SDL_DestroyWindow(window);
+		SDL_Quit();
+		return;
+	}
+
+	SDL_Texture* backgroundTexture = IMG_LoadTexture(renderer, ".\\assets\\bg.jpg");
+	if (!backgroundTexture) {
+		printf("Erro ao carregar imagem: %s\n", IMG_GetError());
+		SDL_DestroyRenderer(renderer);
+		SDL_DestroyWindow(window);
+		IMG_Quit();
+		SDL_Quit();
+		return;
+	}
+
+	// Loop principal da interface gráfica
+
+	xSemaphoreGive(s_interface); // interface inicializada
+
+	int running = 1;
+	while (running) {
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT) {
+				running = 0;
+			}
+		}
+
+
+
+		// Renderiza o fundo
+		SDL_RenderClear(renderer);
+		SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL); // Copia a textura da imagem de fundo
+		
+		// Renderiza os carros
+		for (int i = 0; i < 2; i++) {
+			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+			SDL_Rect car_rect = { cars[i].x, cars[i].y, cars[i].width, cars[i].height};
+			SDL_RenderFillRect(renderer, &car_rect);
+		}
+		
+		
+		SDL_RenderPresent(renderer); // Exibe o conteúdo
+
+		SDL_Delay(32); // Pequeno atraso (~30 FPS)
+	}
+
+	// Limpa recursos
+	SDL_DestroyTexture(backgroundTexture);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+
+	return NULL;
+}
+
+void HelloTask(void* args) {
+
+	//xTaskCreate(f_car, taskname, 100, (void*)&car, 10, &handle);
+	int count = 0;
+	car_create(50, 210, Red, NULL, &cars[0]);
+	car_create(50, 200+335, Red, NULL, &cars[1]);
+	
+
+	while (1) {
+		printf("Alô mundo cruel!\n");
+			fflush(stdout);
+
+		count++;
+		vTaskDelay(1000);
+	}
+}
+
 int main( void )
 {
 	/* This demo uses heap_5.c, so start by defining some heap regions.  heap_5
@@ -147,9 +258,17 @@ int main( void )
 	vTraceEnable( TRC_START );
 
 
-	
+	s_interface = xSemaphoreCreateCounting(1, 0);
+
+	xTaskHandle HT, h_interface;
+	/* create task */
+	xTaskCreate(HelloTask, "HelloTask", configMINIMAL_STACK_SIZE, (void *)NULL, 1, &HT);
+	xTaskCreate(run_sdl_interface, "Interface", 4064, (void*)NULL, 1, &h_interface);
 	vTaskStartScheduler();
-	for (;;);
+	
+
+
+
 	return 0;
 }
 /*-----------------------------------------------------------*/
