@@ -100,7 +100,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\Source\include;..\..\Source\portable\MSVC-MingW;..\Common\Include;..\..\..\FreeRTOS-Plus\Source\FreeRTOS-Plus-Trace\Include;.\Trace_Recorder_Configuration;.;$(MSBuildProjectDirectory)\Libs\SFML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source\include;..\..\Source\portable\MSVC-MingW;..\Common\Include;..\..\..\FreeRTOS-Plus\Source\FreeRTOS-Plus-Trace\Include;.\Trace_Recorder_Configuration;.;$(MSBuildProjectDirectory)\Libs\SDL2_image\include;$(MSBuildProjectDirectory)\Libs\SDL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WIN32_WINNT=0x0601;WINVER=0x400;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -125,9 +125,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\Debug/WIN32.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>sfml-graphics.lib;sfml-window.lib;sfml-system.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SLD2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalLibraryDirectories>$(ProjectDir)Libs\SFML\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)Libs\SDL\libx86;$(ProjectDir)Libs\SDL2_image\libx86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
