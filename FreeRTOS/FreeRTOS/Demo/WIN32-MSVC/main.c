@@ -70,9 +70,6 @@
 
 SemaphoreHandle_t s_interface;
 
-Car cars[5];
-int car_count;
-
 
 /* This project provides two demo applications.  A simple blinky style demo
 application, and a more comprehensive test and demo application.  The
@@ -150,44 +147,12 @@ static BaseType_t xTraceRunning = pdTRUE;
 
 /*-----------------------------------------------------------*/
 
-// Definições de constantes
-#define VELOCIDADE_PADRAO 50.0f          // km/h
-#define INTERVALO_GERACAO_VEICULO_MS 5000 // Gera um veículo a cada 5 segundos
-#define MAX_VEICULOS 100
-#define QT_ROTAS 3                       // Quantidade fixa de rotas
-
-// Estrutura do Veículo
-typedef struct {
-	int id;
-	float Velocidade;      // km/h
-	int Intersessao;       // Representado por 0,1,2,... correspondentes a interseções
-	int rotas[QT_ROTAS];   // Array de direções que o veículo irá fazer
-} Vehicle;
-
-int vehicle_count = 0;
-
-// Protótipos de função
-void vVehicleTask(void* pvParameters);
-void vVehicleGeneratorTask(void* pvParameters);
 void vCruzamentoATask(void* pvParameters);
 void vCruzamentoBTask(void* pvParameters);
 void vCruzamentoCTask(void* pvParameters);
 void vCruzamentoDTask(void* pvParameters);
 void generate_random_route(int rotas[QT_ROTAS]);
 int get_random_starting_crossing(void);
-
-// Função para gerar rotas aleatórias
-void generate_random_route(int rotas[QT_ROTAS]) {
-	for (int i = 0; i < QT_ROTAS; i++) {
-		rotas[i] = rand() % 3; // 0, 1 ou 2 representando direções diferentes
-	}
-}
-// Função para obter uma interseção inicial aleatória
-int get_random_starting_crossing(void) {
-	int crossings[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-	return crossings[rand() % 8];
-}
-
 
 typedef struct {
     char id; // 'A', 'B', 'C', 'D'
@@ -227,21 +192,21 @@ void vCruzamentoATask(void* pvParameters) {
 	while (1) {
 		
 		// Fase 0: NS Straight & EW Left
-		xSemaphoreGive(intersection->sem_NS_Straight);
-		xSemaphoreGive(intersection->sem_EW_Left);
-		xSemaphoreTake(intersection->sem_EW_Straight);
-		xSemaphoreTake(intersection->sem_NS_Left);
+		//xSemaphoreGive(intersection->sem_NS_Straight);
+		//xSemaphoreGive(intersection->sem_EW_Left);
+		//xSemaphoreTake(intersection->sem_EW_Straight);
+		//xSemaphoreTake(intersection->sem_NS_Left);
 
-		vTaskDelay(pdMS_TO_TICKS(PHASE_DURATION_MS));
+		//vTaskDelay(pdMS_TO_TICKS(PHASE_DURATION_MS));
 
-		// Alternar fases
-		intersection->currentPhase = !intersection->currentPhase;
+		//// Alternar fases
+		//intersection->currentPhase = !intersection->currentPhase;
 
-		// Fase 1: EW Straight & NS Left
-		xSemaphoreGive(intersection->sem_EW_Straight);
-		xSemaphoreGive(intersection->sem_NS_Left);
-		xSemaphoreTake(intersection->sem_NS_Straight);
-		xSemaphoreTake(intersection->sem_EW_Left);
+		//// Fase 1: EW Straight & NS Left
+		//xSemaphoreGive(intersection->sem_EW_Straight);
+		//xSemaphoreGive(intersection->sem_NS_Left);
+		//xSemaphoreTake(intersection->sem_NS_Straight);
+		//xSemaphoreTake(intersection->sem_EW_Left);
 
 
 		vTaskDelay(pdMS_TO_TICKS(PHASE_DURATION_MS));
@@ -264,50 +229,6 @@ void vCruzamentoDTask(void* pvParameters) {
 }
 
 
-// Tarefa que representa o comportamento de um veículo
-void vVehicleTask(void* pvParameters) {
-	
-}
-
-// Tarefa que gera veículos periodicamente
-void vVehicleGeneratorTask(void* pvParameters) {
-	for (;;) {
-		// Criar um novo veículo
-		Vehicle* new_vehicle = pvPortMalloc(sizeof(Vehicle));
-		if (new_vehicle != NULL) {
-			new_vehicle->id = vehicle_count++;
-
-			// Definir a rota aleatoriamente
-			generate_random_route(new_vehicle->rotas);
-
-			// Definir velocidade
-			new_vehicle->Velocidade = VELOCIDADE_PADRAO;
-
-			// Definir o cruzamento inicial
-			new_vehicle->Intersessao = get_random_starting_crossing();
-
-			// **Imprimir informações do veículo criado**
-			printf("Veiculo Criado:\n");
-			printf("ID: %d\n", new_vehicle->id);
-			printf("Velocidade: %.2f km/h\n", new_vehicle->Velocidade);
-			printf("Intersecao Inicial: %d\n", new_vehicle->Intersessao);
-			printf("Rotas: [");
-			for (int i = 0; i < QT_ROTAS; i++) {
-				printf("%d", new_vehicle->rotas[i]);
-				if (i < QT_ROTAS - 1) {
-					printf(", ");
-				}
-			}
-			printf("]\n\n");
-
-			// Criar a tarefa do veículo
-			xTaskCreate(vVehicleTask, "VehicleTask", configMINIMAL_STACK_SIZE, (void*)new_vehicle, 1, NULL);
-		}
-
-		// Aguardar o próximo intervalo de geração
-		vTaskDelay(pdMS_TO_TICKS(INTERVALO_GERACAO_VEICULO_MS));
-	}
-}
 
 /*-----------------------------------------------------------*/
 
@@ -391,7 +312,7 @@ void run_sdl_interface(void* arg) {
 		// Atualiza o texto da posição do mouse
 		snprintf(mousePosText, sizeof(mousePosText), "Mouse: (%d, %d)", mouseX, mouseY);
 
-		/// ------ Gráficos -------
+		/// ------ Renderizar Cenas -------
 
 		// Renderiza o fundo
 		SDL_RenderClear(renderer);
@@ -403,18 +324,18 @@ void run_sdl_interface(void* arg) {
 		SDL_QueryTexture(mousePosTexture, NULL, NULL, &textRect.w, &textRect.h);
 		textRect.x = 10; // Posição X do texto
 		textRect.y = 10; // Posição Y do texto
-
-		
 		
 		// Renderiza os carros
-		for (int i = 0; i < 2; i++) {
-			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-			SDL_Rect car_rect = { cars[i].x, cars[i].y, cars[i].width, cars[i].height};
+		for (int i = 0; i < vehicle_count; i++) {
+			SDL_SetRenderDrawColor(renderer, vehicles[i].color.r, vehicles[i].color.g, vehicles[i].color.b, 255);
+			SDL_Rect car_rect = { vehicles[i].x, vehicles[i].y, 10, 10};
 			SDL_RenderFillRect(renderer, &car_rect);
 		}
 		
 		SDL_RenderCopy(renderer, mousePosTexture, NULL, &textRect); // Renderiza o overlay do texto
 		SDL_RenderPresent(renderer); // Exibe o conteúdo
+
+		/// !----- Renderizar Cenas ------!
 
 		SDL_Delay(32); // Pequeno atraso (~30 FPS)
 	}
@@ -432,9 +353,6 @@ void HelloTask(void* args) {
 
 	//xTaskCreate(f_car, taskname, 100, (void*)&car, 10, &handle);
 	int count = 0;
-	car_create(50, 210, Red, NULL, &cars[0]);
-	car_create(50, 200+335, Red, NULL, &cars[1]);
-	
 
 	while (1) {
 		//printf("Alô mundo cruel!\n");
