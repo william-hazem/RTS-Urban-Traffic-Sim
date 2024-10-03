@@ -61,6 +61,9 @@
 
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
+
+#include "interface_utils.h"
 
 #include "cars.h"
 
@@ -161,6 +164,25 @@ void run_sdl_interface(void* arg) {
 		return NULL;
 	}
 
+	// Inicializa SDL_ttf
+	if (TTF_Init() == -1) {
+		printf("Erro ao inicializar SDL_ttf: %s\n", TTF_GetError());
+		IMG_Quit();
+		SDL_Quit();
+		return NULL;
+	}
+
+	// Carrega a fonte para o texto (certifique-se de ter um arquivo de fonte TTF)
+	TTF_Font* font = TTF_OpenFont(".\\assets\\Roboto-Regular.ttf", 24);
+	if (!font) {
+		printf("Erro ao carregar a fonte: %s\n", TTF_GetError());
+		TTF_Quit();
+		IMG_Quit();
+		SDL_Quit();
+		return;
+	}
+
+
 	// Cria uma janela
 	SDL_Window* window = SDL_CreateWindow("Simulação de Rua", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 720, 720, SDL_WINDOW_SHOWN);
 	if (!window) {
@@ -192,6 +214,8 @@ void run_sdl_interface(void* arg) {
 
 	xSemaphoreGive(s_interface); // interface inicializada
 
+	char mousePosText[50];
+	SDL_Color textcolor = { 255, 0, 0, 255 };
 	int running = 1;
 	while (running) {
 		SDL_Event event;
@@ -201,11 +225,26 @@ void run_sdl_interface(void* arg) {
 			}
 		}
 
+		int mouseX, mouseY;
+		SDL_GetMouseState(&mouseX, &mouseY);
 
+		// Atualiza o texto da posição do mouse
+		snprintf(mousePosText, sizeof(mousePosText), "Mouse: (%d, %d)", mouseX, mouseY);
+
+		/// ------ Gráficos -------
 
 		// Renderiza o fundo
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL); // Copia a textura da imagem de fundo
+
+		// Renderiza o texto da posição do mouse
+		SDL_Texture* mousePosTexture = render_text(mousePosText, textcolor, renderer, font);
+		SDL_Rect textRect;
+		SDL_QueryTexture(mousePosTexture, NULL, NULL, &textRect.w, &textRect.h);
+		textRect.x = 10; // Posição X do texto
+		textRect.y = 10; // Posição Y do texto
+
+		
 		
 		// Renderiza os carros
 		for (int i = 0; i < 2; i++) {
@@ -214,7 +253,7 @@ void run_sdl_interface(void* arg) {
 			SDL_RenderFillRect(renderer, &car_rect);
 		}
 		
-		
+		SDL_RenderCopy(renderer, mousePosTexture, NULL, &textRect); // Renderiza o overlay do texto
 		SDL_RenderPresent(renderer); // Exibe o conteúdo
 
 		SDL_Delay(32); // Pequeno atraso (~30 FPS)
