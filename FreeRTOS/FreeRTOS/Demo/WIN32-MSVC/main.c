@@ -147,85 +147,113 @@ static BaseType_t xTraceRunning = pdTRUE;
 
 /*-----------------------------------------------------------*/
 
-void vCruzamentoATask(void* pvParameters);
-void vCruzamentoBTask(void* pvParameters);
-void vCruzamentoCTask(void* pvParameters);
-void vCruzamentoDTask(void* pvParameters);
-void generate_random_route(int rotas[QT_ROTAS]);
-int get_random_starting_crossing(void);
+#define NUM_CROSSINGS 4
+#define QT_ROTAS 4
+#define PHASE_DURATION_MS 5000 // 30 segundos
 
 typedef struct {
-    char id; // 'A', 'B', 'C', 'D'
-    SemaphoreHandle_t sem_NS_Straight;
-    SemaphoreHandle_t sem_EW_Straight;
-    SemaphoreHandle_t sem_NS_Left;
-    SemaphoreHandle_t sem_EW_Left;
-    // Estado atual do ciclo semafórico
-    int currentPhase; // 0: NS Straight & EW Left | 1: EW Straight & NS Left
+	char id; // 'A', 'B', 'C', 'D'
+	SemaphoreHandle_t sem_NS_Straight;
+	SemaphoreHandle_t sem_EW_Straight;
+	SemaphoreHandle_t sem_NS_Left;
+	SemaphoreHandle_t sem_EW_Left;
+	int currentPhase;      // Fase atual do ciclo semafórico
+	int initialPhase;      // Fase inicial ao iniciar o ciclo
 } Intersection;
-
-#define NUM_CROSSINGS 4
 
 Intersection intersections[NUM_CROSSINGS];
 
+// Função de Inicialização dos Cruzamentos
+
 void init_intersections() {
+	
 	char ids[NUM_CROSSINGS] = { 'A', 'B', 'C', 'D' };
+	// Fases iniciais para cada cruzamento
+	int initialPhases[NUM_CROSSINGS] = { 0, 1, 2, 3 };
+
 	for (int i = 0; i < NUM_CROSSINGS; i++) {
 		intersections[i].id = ids[i];
 		intersections[i].sem_NS_Straight = xSemaphoreCreateBinary();
 		intersections[i].sem_EW_Straight = xSemaphoreCreateBinary();
 		intersections[i].sem_NS_Left = xSemaphoreCreateBinary();
 		intersections[i].sem_EW_Left = xSemaphoreCreateBinary();
-
-		// Inicialmente, liberar EW Straight & NS Left
-		xSemaphoreGive(intersections->sem_EW_Straight);
-		xSemaphoreGive(intersections->sem_NS_Left);
+		intersections[i].initialPhase = initialPhases[i];
+		intersections[i].currentPhase = intersections[i].initialPhase; // Define a fase atual como a fase inicial
 	}
 }
 
-#define PHASE_DURATION_MS 30000 // 30 segundos
+// Função para Gerenciar as Fases dos Semáforos
 
-// Tarefa que representa o comportamento do cruzamento A
-void vCruzamentoATask(void* pvParameters) {
-	Intersection* intersection = (Intersection*)pvParameters;
-
+void manage_semaphores(Intersection* crossing) {
 	while (1) {
-		
-		// Fase 0: NS Straight & EW Left
-		//xSemaphoreGive(intersection->sem_NS_Straight);
-		//xSemaphoreGive(intersection->sem_EW_Left);
-		//xSemaphoreTake(intersection->sem_EW_Straight);
-		//xSemaphoreTake(intersection->sem_NS_Left);
+		// Dependendo da fase atual, ativa o semáforo correspondente
+		switch (crossing->currentPhase) {
+		case 0:
+			// Fase 1: NS Straight disponível
+			xSemaphoreGive(crossing->sem_NS_Straight);
+			xSemaphoreTake(crossing->sem_EW_Left, 0);
+			xSemaphoreTake(crossing->sem_EW_Straight, 0);
+			xSemaphoreTake(crossing->sem_NS_Left, 0);
+			printf("Cruzamento %c: Fase 1 - NS Straight Ativado\n", crossing->id);
+			break;
+		case 1:
+			// Fase 2: EW Left disponível
+			xSemaphoreGive(crossing->sem_EW_Left);
+			xSemaphoreTake(crossing->sem_NS_Straight, 0);
+			xSemaphoreTake(crossing->sem_EW_Straight, 0);
+			xSemaphoreTake(crossing->sem_NS_Left, 0);
+			printf("Cruzamento %c: Fase 2 - EW Left Ativado\n", crossing->id);
+			break;
+		case 2:
+			// Fase 3: EW Straight disponível
+			xSemaphoreGive(crossing->sem_EW_Straight);
+			xSemaphoreTake(crossing->sem_NS_Straight, 0);
+			xSemaphoreTake(crossing->sem_EW_Left, 0);
+			xSemaphoreTake(crossing->sem_NS_Left, 0);
+			printf("Cruzamento %c: Fase 3 - EW Straight Ativado\n", crossing->id);
+			break;
+		case 3:
+			// Fase 4: NS Left disponível
+			xSemaphoreGive(crossing->sem_NS_Left);
+			xSemaphoreTake(crossing->sem_NS_Straight, 0);
+			xSemaphoreTake(crossing->sem_EW_Left, 0);
+			xSemaphoreTake(crossing->sem_EW_Straight, 0);
+			printf("Cruzamento %c: Fase 4 - NS Left Ativado\n", crossing->id);
+			break;
+		default:
+			// Reseta para a fase 0 caso ocorra algum erro
+			crossing->currentPhase = 0;
+			continue;
+		}
 
-		//vTaskDelay(pdMS_TO_TICKS(PHASE_DURATION_MS));
-
-		//// Alternar fases
-		//intersection->currentPhase = !intersection->currentPhase;
-
-		//// Fase 1: EW Straight & NS Left
-		//xSemaphoreGive(intersection->sem_EW_Straight);
-		//xSemaphoreGive(intersection->sem_NS_Left);
-		//xSemaphoreTake(intersection->sem_NS_Straight);
-		//xSemaphoreTake(intersection->sem_EW_Left);
-
-
+		// Aguarda a duração da fase
 		vTaskDelay(pdMS_TO_TICKS(PHASE_DURATION_MS));
+
+		// Passa para a próxima fase
+		crossing->currentPhase = (crossing->currentPhase + 1) % 4;
 	}
 }
 
-// Tarefa que representa o comportamento do cruzamento B
+// Funções das Tarefas para Cada Cruzamento
+
+void vCruzamentoATask(void* pvParameters) {
+	Intersection* crossing = &intersections[0];
+	manage_semaphores(crossing);
+}
+
 void vCruzamentoBTask(void* pvParameters) {
-
+	Intersection* crossing = &intersections[1];
+	manage_semaphores(crossing);
 }
 
-// Tarefa que representa o comportamento do cruzamento C
 void vCruzamentoCTask(void* pvParameters) {
-
+	Intersection* crossing = &intersections[2];
+	manage_semaphores(crossing);
 }
 
-// Tarefa que representa o comportamento do cruzamento D
 void vCruzamentoDTask(void* pvParameters) {
-
+	Intersection* crossing = &intersections[3];
+	manage_semaphores(crossing);
 }
 
 
@@ -384,7 +412,14 @@ int main( void )
 	xTaskCreate(HelloTask, "HelloTask", configMINIMAL_STACK_SIZE, (void *)NULL, 1, &HT);
 	xTaskCreate(run_sdl_interface, "Interface", 4064, (void*)NULL, 1, &h_interface);
 	xTaskCreate(vVehicleGeneratorTask, "VehicleGeneratorTask", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-	xTaskCreate(vCruzamentoATask, "vCruzamentoATask", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+
+	// Cria as tarefas para cada cruzamento
+	xTaskCreate(vCruzamentoATask, "CruzamentoA", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(vCruzamentoBTask, "CruzamentoB", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(vCruzamentoCTask, "CruzamentoC", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(vCruzamentoDTask, "CruzamentoD", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+
+	
 	vTaskStartScheduler();
 	
 

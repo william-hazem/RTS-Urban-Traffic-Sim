@@ -98,19 +98,19 @@ void vVehicleGeneratorTask(void* pvParameters) {
 
 
 			// **Imprimir informações do veículo criado**
-			printf("Veiculo Criado:\n");
-			printf("ID: %d\n", new_vehicle->id);
-			printf("Velocidade: %.2f km/h\n", new_vehicle->Velocidade);
-			printf("Intersecao Inicial: %d\n", new_vehicle->Intersessao);
-			printf("Posição inicial: %.2f, %.2f, ori=%d", new_vehicle->x, new_vehicle->y, new_vehicle->orientation);
-			printf("Rotas: [");
-			for (int i = 0; i < QT_ROTAS; i++) {
-				printf("%d", new_vehicle->rotas[i]);
-				if (i < QT_ROTAS - 1) {
-					printf(", ");
-				}
-			}
-			printf("]\n\n");
+			//printf("Veiculo Criado:\n");
+			//printf("ID: %d\n", new_vehicle->id);
+			//printf("Velocidade: %.2f km/h\n", new_vehicle->Velocidade);
+			//printf("Intersecao Inicial: %d\n", new_vehicle->Intersessao);
+			//printf("Posição inicial: %.2f, %.2f, ori=%d", new_vehicle->x, new_vehicle->y, new_vehicle->orientation);
+			//printf("Rotas: [");
+			//for (int i = 0; i < QT_ROTAS; i++) {
+			//	printf("%d", new_vehicle->rotas[i]);
+			//	if (i < QT_ROTAS - 1) {
+			//		printf(", ");
+			//	}
+			//}
+			//printf("]\n\n");
 
 			vehicles[vehicle_count] = *new_vehicle;
 
@@ -186,7 +186,7 @@ void vVehicleTask(void* args)
 			if (estado == V_Run)
 			{
 
-				printf("[CAR %d] VRUNNN", car->id);
+				//printf("[CAR %d] VRUNNN", car->id);
 				updatePosition(car, vel, sem_ref, &sem_dist);
 				if (sem_dist <= 3.0f)
 					estado = V_Sem; // verifica o estado do semáforo
