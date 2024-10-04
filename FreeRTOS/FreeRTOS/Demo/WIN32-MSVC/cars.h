@@ -4,6 +4,8 @@
 #include "SDL_pixels.h"
 #include "mapping.h"
 
+#include <time.h>
+
 #ifndef CARS_H
 #define CARS_H
 
@@ -132,35 +134,64 @@ void vVehicleGeneratorTask(void* pvParameters) {
 	}
 }
 
-
-void updatePosition(Vehicle* car, float vel, float sem_ref, float* sem_dist)
+/**
+ * @brief Atualiza a posição do veículo e computa a distância até o objetivo.
+ * 
+ * Se out_dist for nulo, apenas atualiza a posição do veículo
+ * 
+ * @param[in,out]	car			Referência do veículo
+ * @param[in]		vel			Velocidade do veículo
+ * @param[in]		goal		Distância alvo ao longo do trajeto
+ * @param[out]		out_dist	Distância atual do veículo até o objetivo
+**/
+void updatePosition(Vehicle* car, float vel, float goal, float* out_dist)
 {
 	float dist = -1.0f;
 	if (car->orientation == NORTE)
 	{
 		car->y -= vel;
-		dist = abs(car->y - sem_ref);
+		dist = abs(car->y - goal);
 	}
 	if (car->orientation == SUL)
 	{
 		car->y += vel;
-		dist = abs(car->y - sem_ref);
+		dist = abs(car->y - goal);
 	}
 	if (car->orientation == LESTE)
 	{
 		car->x += vel;
-		dist = abs(car->x - sem_ref);
+		dist = abs(car->x - goal);
 	}
 	if (car->orientation == OESTE)
 	{
 		car->x -= vel;
-		dist = abs(car->x - sem_ref);
+		dist = abs(car->x - goal);
 	}
-	if (sem_dist) *sem_dist = dist;
+	if (out_dist) *out_dist = dist;
 }
 
-typedef enum { V_Stop = 0, V_Run, V_Sem, V_Crossing, V_ChangeDirection} e_vehicle_state;
+typedef enum { V_Stop = 0, V_Run, V_Sem, V_Crossing, V_Leaving} e_vehicle_state;
 
+// @brief Verifica se o veículo deixou a região do cenário
+int checkOutBorder(Vehicle* v)
+{
+	if (v->orientation == NORTE || v->orientation == SUL)
+	{
+		if (v->y < LIM_Y1 || v->y > LIM_Y2) return 1;
+	}
+	else if (v->x < LIM_X1 || v->x > LIM_X2) return 1;
+	return 0;
+}
+
+
+/**
+ * @brief Task do veículo.
+ *
+ * Simula o comportamento do veículo no cenário. O veículo interage com os semáforos para
+ * saber se pode avançar ou se deve esperar.
+ *
+ * @param[in,out]	args	Referência do veículo instânciado em um container
+**/
 void vVehicleTask(void* args)
 {
 	Vehicle* car = (Vehicle*) args;
@@ -175,12 +206,12 @@ void vVehicleTask(void* args)
 	float sem_dist = -1.0f;
 	float sem_ref = (float) SEMMAP_STOP[car->orientation][sem_atual];
 
+	short isStateChanged = 0;
+
 	e_vehicle_state estado = V_Run;
-	
 	// Lógica dos carros
 	for (;;)
 	{
-
 		// Movimento do carro
 		float vel = 1;
 		if (car->running)
@@ -195,31 +226,82 @@ void vVehicleTask(void* args)
 			// Atualiza a posição do carro
 			if (estado == V_Run)
 			{
-
 				//printf("[CAR %d] VRUNNN", car->id);
 				updatePosition(car, vel, sem_ref, &sem_dist);
 				if (sem_dist <= 3.0f)
+				{
 					estado = V_Sem; // verifica o estado do semáforo
-				if (car->id == 7) printf("[CAR 7] next stop point %.2f - sem:%s - dir: %d\n", sem_dist, sem2string[sem_atual], car->orientation);
-
+					isStateChanged = 1;
+				}
 			}
 			else if (estado == V_Sem)
 			{
 				// implementar verificação dos semáforos
-				//estado = V_Crossing;
+				vTaskDelay(pdMS_TO_TICKS(500)); // remover depois
+				sem_ref = 0;
+				
+				// Após o semáforo abrir, atualiza a distância alvo (Simular conversão no cruzamento)
+				{
+					const int temp = CROSSING_STEP[sem_atual][car->orientation][car->rotas[rota_atual]];
+					sem_ref = (float) temp;
+					estado = V_Crossing;
+					isStateChanged = 1;
+				}
 			}
 			else if (estado == V_Crossing)
 			{
+				// Realiza a conversão no cruzamento (Movimentação do carro no cruzamento)
+
 				// deve ser feito aqui a movimentação do carro até que
-				if (car->rotas[rota_atual] == FRENTE);	 // Atualizar a rota
-				if (car->rotas[rota_atual] == ESQUERDA); // Atualiza  a rota
-				if (car->rotas[rota_atual] == DIREITA);  // Atualiza  a rota
-				// muda direção do carro se necessário
+				float goal_dist = -1.0f;
+				updatePosition(car, vel, sem_ref, &goal_dist);
 
-				estado == V_Run;
+				//if (car->id == 1) printf("[CAR 1] goal dist = %.2f (%.2f) | sem %s | dir: %d | rota = %d\n", sem_dist, sem_ref, sem2string[sem_atual], car->orientation, car->rotas[rota_atual]);
+				
+				// muda de estado
+				if (goal_dist <= 1.5f) {
 
+					// Atualiza qual o prox. semáforo na rota
+					sem_atual = SEMMAP_NEXT[car->orientation][sem_atual][car->rotas[rota_atual]];
+
+					// Atualiza a orientação do veículo (se fez curva)
+					car->orientation = (short) ORIENTATION_CHANGE[car->orientation][car->rotas[rota_atual]];
+
+					// e qual o prox. ponto alvo (p/ verificação de estado)
+					sem_ref = SEMMAP_STOP[car->orientation][sem_atual];
+
+					if (sem_atual == NONE) {
+						printf("[CAR %d] Veículo deixando cruzamento\n", car->id);
+						estado = V_Leaving;
+					}
+					else {
+						printf("[CAR %d] Indo para o sem. %s\n", car->id, sem2string[sem_atual]);
+						estado = V_Run;
+					}
+					rota_atual++;
+					isStateChanged = 1;
+				}
+			}
+			else if (V_Leaving)
+			{
+				
+				updatePosition(car, vel, 0, NULL);
+				if (checkOutBorder(car))
+				{
+					car->running = 0;
+				}
 			}
 			
+			if (isStateChanged)
+			{
+				printf("[CAR %d] Mudou para o estado %d\n", car->id, estado);
+				isStateChanged = 0;
+				if(estado == V_Crossing)
+					printf("[CAR %d] Realizando conversão à %s no cruzamento %c\n", car->id, dir2string[car->rotas[rota_atual]], sem2string[sem_atual]);
+				if(estado == V_Leaving)
+					printf("[CAR %d] Veículo deixando simulação\n", car->id);
+			}
+
 			if (car->x > 800) car->x = 0;
 			if (car->y > 800) car->y = 0;
 		}

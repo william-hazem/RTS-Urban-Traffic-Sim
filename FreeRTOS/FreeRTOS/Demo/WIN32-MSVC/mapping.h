@@ -88,6 +88,8 @@ const float rua_inicio[8][2] = {
 const int rua_inicio_o[8] = {LESTE, SUL, SUL, OESTE, OESTE, NORTE, NORTE, LESTE};
 const int sem_inicio[8]   = {SEMA, SEMA, SEMB, SEMB, SEMD, SEMD, SEMC, SEMC};
 const char sem2string[][8] = { "A", "B", "C", "D" };
+const char ori2string[][10] = { "NORTE", "SUL", "LESTE", "OESTE" };
+const char dir2string[][10] = { "FRENTE", "DIREITA", "ESQUERDA" };
 
 /// Próximo Semáforo
 // Mapa de trajeto:  Próximo Semáforo = SEM_MAP[Sentido do carro][Semáforo atual][Direção]
@@ -120,8 +122,6 @@ const int SEMMAP_NEXT[][4][3] = {
 	}
 };
 
-
-
 /// Mapa de pontos de paradas
 // x ou y = SEMMAP_STOP[sentido][semaforo]
 const int SEMMAP_STOP[][4] = {
@@ -129,6 +129,48 @@ const int SEMMAP_STOP[][4] = {
 	{FP_Y1, FP_Y1, FP_Y3, FP_Y3}, // SUL   = 1
 	{FP_X1, FP_X3, FP_X1, FP_X3}, // LESTE = 2
 	{FP_X2, FP_X4, FP_X2, FP_X4}, // OESTE = 2
+};
+
+/// Apartir de um sentido do carro, qual a proxima orientação após uma mudança
+const int ORIENTATION_CHANGE[][3] = {
+	{NORTE, LESTE, OESTE},	// NORTE
+	{SUL  , OESTE, LESTE},	// SUL
+	{LESTE, SUL  , NORTE},	// LESTE
+	{OESTE, NORTE, SUL},	// LESTE
+};
+
+// -1 indica fim que não há semáforo
+// 0 indica que há semáforo
+static const int CROSSING_STEP[4][4][3] = {
+	{ // Sem. A
+		{-1, R_WE1_Y2 - 10, R_WE1_Y1},		// NORTE - Frente, Direita, Esquerda
+		{0 , R_WE1_Y1	  , R_WE1_Y2 - 10},	// SUL   - Frente, Direita, Esquerda
+		{0 , R_NS1_X1	  , R_NS1_X2 - 10},	// LESTE - Frente, Direita, Esquerda
+		{-1, R_NS1_X2 - 10, R_NS1_X1},	    // SUL	 - Frente, Direita, Esquerda
+
+	},
+	{ // Sem. B
+		{-1, R_WE1_Y2 - 10, R_WE1_Y1},		// NORTE - Frente, Direita, Esquerda
+		{0 , R_WE1_Y1	  , R_WE1_Y2 - 10},	// SUL	 - Frente, Direita, Esquerda
+		{-1 , R_NS2_X1	  , R_NS2_X2 - 10},	// LESTE - Frente, Direita, Esquerda
+		{0, R_NS2_X2 - 10, R_NS2_X1},	    // SUL	 - Frente, Direita, Esquerda
+
+	},
+	{ // Sem. C
+		{ 0, R_WE2_Y2 - 10, R_WE2_Y1},		// NORTE - Frente, Direita, Esquerda
+		{ 0, R_WE2_Y1	  , R_WE2_Y2 - 10},	// SUL	 - Frente, Direita, Esquerda
+		{-1, R_NS1_X1	  , R_NS1_X2 - 10},	// LESTE - Frente, Direita, Esquerda
+		{ 0, R_NS1_X2 - 10, R_NS1_X1},	    // SUL	 - Frente, Direita, Esquerda
+
+	},
+	{ // Sem. D
+		{ 0, R_WE2_Y2 - 10, R_WE2_Y1},		// NORTE - Frente, Direita, Esquerda
+		{ 0, R_WE2_Y1	  , R_WE2_Y2 - 10},	// SUL	 - Frente, Direita, Esquerda
+		{-1, R_NS2_X1	  , R_NS2_X2 - 10},	// LESTE - Frente, Direita, Esquerda
+		{ 0, R_NS2_X2 - 10, R_NS2_X1},	    // SUL	 - Frente, Direita, Esquerda
+
+	},
+	
 };
 
 #endif // ! MAPPING_H
