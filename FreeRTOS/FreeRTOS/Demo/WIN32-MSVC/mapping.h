@@ -1,8 +1,26 @@
-/// Pontos de mapeamento do cenário
+/**
+ * @file mapping.h 
+ * @brief Definição de pontos e valores de interesse do cenário
+ * As constantes definidas referem-se a valores que correspondem partes do cenário (asset\bg.jpg)
+**/
 
 #pragma once
 #ifndef MAPPING_H
 #define MAPPING_H
+
+/// Posição das faixas de parada
+#define NORTE	0
+#define SUL		1
+#define LESTE	2
+#define OESTE	3
+
+#define NONE   -1	// Nada atribuido, indica fim de trajeto
+#define SEMA	0
+#define SEMB	1
+#define SEMC	2
+#define SEMD	3
+
+typedef enum { FRENTE = 0, DIREITA, ESQUERDA } e_directions;
 
 // Faixas de parada
 #define FP_X1 157
@@ -13,12 +31,6 @@
 #define FP_Y2 246
 #define FP_Y3 474
 #define FP_Y4 572
-
-/// Posição das faixas de parada
-#define NORTE	0
-#define SUL		1
-#define LESTE	2
-#define OESTE	3
 
 const int sema_paradas[4] = {
 	FP_Y1, FP_Y2,	// Norte, Sul
@@ -74,6 +86,49 @@ const float rua_inicio[8][2] = {
 	{LIM_X1  , R_WE2_Y2 - WFAIXA},	// Entrada Oeste - Cruzamento C
 };
 const int rua_inicio_o[8] = {LESTE, SUL, SUL, OESTE, OESTE, NORTE, NORTE, LESTE};
+const int sem_inicio[8]   = {SEMA, SEMA, SEMB, SEMB, SEMD, SEMD, SEMC, SEMC};
+const char sem2string[][8] = { "A", "B", "C", "D" };
 
+/// Próximo Semáforo
+// Mapa de trajeto:  Próximo Semáforo = SEM_MAP[Sentido do carro][Semáforo atual][Direção]
+// Direção: Frente = 0, Direita = 1, Esquerda = 2
+// Sentido: NORTE = 0, SUL = 1, LESTE = 2, OESTE = 3
+const int SEMMAP_NEXT[][4][3] = {
+	{	// Caso o sentido do carro seja o NORTE = 0
+		{NONE, SEMB, NONE}, // Sem. A
+		{NONE, NONE, SEMA}, // Sem. B
+		{SEMA, SEMD, NONE},	// Sem. C
+		{SEMB, NONE, SEMC}, // Sem. D
+	},
+	{	// Caso o sentido do carro seja o SUL = 1
+		{SEMC, NONE, SEMB}, // Sem. A
+		{SEMD, SEMA, NONE}, // Sem. B
+		{NONE, NONE, SEMD},	// Sem. C
+		{NONE, SEMC, NONE}, // Sem. D
+	},
+	{	// Caso o sentido do carro seja o LESTE = 2
+		{SEMB, SEMC, NONE}, // Sem. A
+		{NONE, SEMD, NONE}, // Sem. B
+		{SEMD, NONE, SEMB}, // Sem. C
+		{NONE, NONE, SEMB}, // Sem. D
+	},
+	{	// Caso o sentido do carro seja o OESTE = 3
+		{NONE, NONE, SEMC}, // Sem. A
+		{SEMA, NONE, SEMD}, // Sem. B
+		{NONE, SEMA, NONE}, // Sem. C
+		{SEMC, SEMB, NONE}, // Sem. 
+	}
+};
+
+
+
+/// Mapa de pontos de paradas
+// x ou y = SEMMAP_STOP[sentido][semaforo]
+const int SEMMAP_STOP[][4] = {
+	{FP_Y2, FP_Y2, FP_Y4, FP_Y4}, // NORTE = 0
+	{FP_Y1, FP_Y1, FP_Y3, FP_Y3}, // SUL   = 1
+	{FP_X1, FP_X3, FP_X1, FP_X3}, // LESTE = 2
+	{FP_X2, FP_X4, FP_X2, FP_X4}, // OESTE = 2
+};
 
 #endif // ! MAPPING_H

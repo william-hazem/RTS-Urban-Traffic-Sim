@@ -390,9 +390,11 @@ void HelloTask(void* args) {
 		vTaskDelay(1000);
 	}
 }
-
+#include <time.h>
+#include <math.h>
 int main( void )
 {
+	srand(100);
 	/* This demo uses heap_5.c, so start by defining some heap regions.  heap_5
 	is only used for test and example reasons.  Heap_4 is more appropriate.  See
 	http://www.freertos.org/a00111.html for an explanation. */

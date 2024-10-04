@@ -14,7 +14,7 @@
 #define QT_ROTAS 3							// Quantidade fixa de rotas
 
 typedef enum {N, S, E, W} e_car_direction;
-typedef enum {FRENTE = 0, DIREITA, ESQUERDA} e_car_sentido;
+
 
 const SDL_Color CAR_COLORS[] = {
 	{ 255, 0, 0, 255 },
@@ -53,19 +53,22 @@ void generate_random_route(int rotas[QT_ROTAS]) {
 }
 // Função para obter uma interseção inicial aleatória
 int get_random_starting_crossing(void) {
-	int crossings[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-	return crossings[rand() % 8];
+	static int i = 0;
+	if (i > 7) i = 0;
+	return i++; // interrompe a aleatoriedade para debug
+
+	return rand() % 8;
 }
 
 
-void getRandomInitialPositionOrientation(float* x, float* y, int* i)
+void getRandomInitialPositionOrientation(int z, float* x, float* y, int* i)
 {
-	static int z = 0;
+	//static int z = 0;
 	*x = rua_inicio[z][0];
 	*y = rua_inicio[z][1];
 	*i = rua_inicio_o[z];
 
-	if (++z > 7) z = 0;
+	//if (++z > 7) z = 0;
 }
 
 // Tarefa que gera veículos periodicamente
@@ -73,7 +76,10 @@ void vVehicleGeneratorTask(void* pvParameters) {
 	vehicle_count = 0;
 	for (;;) {
 		// Criar um novo veículo
-		if (vehicle_count > 7) continue; // limita a 7 veiculos por enquanto
+		if (vehicle_count > 7) { // limita a 7 veiculos por enquanto
+			vTaskDelay(5000);
+			continue;
+		}
 
 		Vehicle* new_vehicle = pvPortMalloc(sizeof(Vehicle));
 		if (new_vehicle != NULL) {
@@ -89,7 +95,7 @@ void vVehicleGeneratorTask(void* pvParameters) {
 			new_vehicle->Intersessao = get_random_starting_crossing();
 
 			// Definir ponto inicial
-			getRandomInitialPositionOrientation(&new_vehicle->x, &new_vehicle->y, &new_vehicle->orientation);
+			getRandomInitialPositionOrientation(new_vehicle->Intersessao,&new_vehicle->x, &new_vehicle->y, &new_vehicle->orientation);
 			//new_vehicle->orientation = i;
 
 			// Definir cor inicial
@@ -162,10 +168,14 @@ void vVehicleTask(void* args)
 	
 	int rota_atual = 0;
 	int prox_checagem = 0; // distância até o semáforo
-	e_vehicle_state estado = V_Run;
+	
+	int sem_atual = sem_inicio[car->Intersessao];
+	printf("[CAR % d] sem % s\n", car->id, sem2string[sem_atual]);
 
-	float sem_ref = 0;
-	float sem_dist;
+	float sem_dist = -1.0f;
+	float sem_ref = (float) SEMMAP_STOP[car->orientation][sem_atual];
+
+	e_vehicle_state estado = V_Run;
 	
 	// Lógica dos carros
 	for (;;)
@@ -190,12 +200,13 @@ void vVehicleTask(void* args)
 				updatePosition(car, vel, sem_ref, &sem_dist);
 				if (sem_dist <= 3.0f)
 					estado = V_Sem; // verifica o estado do semáforo
+				if (car->id == 7) printf("[CAR 7] next stop point %.2f - sem:%s - dir: %d\n", sem_dist, sem2string[sem_atual], car->orientation);
 
 			}
 			else if (estado == V_Sem)
 			{
 				// implementar verificação dos semáforos
-				estado = V_Crossing;
+				//estado = V_Crossing;
 			}
 			else if (estado == V_Crossing)
 			{
