@@ -1,14 +1,14 @@
 /**
- * @file mapping.h 
- * @brief Definição de pontos e valores de interesse do cenário
- * As constantes definidas referem-se a valores que correspondem partes do cenário (asset\bg.jpg)
+ * @file mapping.h
+ * @brief Defini??o de pontos e valores de interesse do cen?rio
+ * As constantes definidas referem-se a valores que correspondem partes do cen?rio (asset\bg.jpg)
 **/
 
 #pragma once
 #ifndef MAPPING_H
 #define MAPPING_H
 
-/// Posição das faixas de parada
+/// Posi??o das faixas de parada
 #define NORTE	0
 #define SUL		1
 #define LESTE	2
@@ -53,8 +53,8 @@ const int semd_paradas[4] = {
 };
 
 
-/// Posição inicial de geração em cada rua (pares x, y)
-#define WFAIXA 25 // dimensões da faixa
+/// Posi??o inicial de gera??o em cada rua (pares x, y)
+#define WFAIXA 25 // dimens?es da faixa
 
 // limites de borda das ruas 
 #define LIM_X1 50
@@ -85,15 +85,15 @@ const float rua_inicio[8][2] = {
 	{R_NS1_X2 - WFAIXA, LIM_Y2 },	// Entrada Sul   - Cruzamento C
 	{LIM_X1  , R_WE2_Y2 - WFAIXA},	// Entrada Oeste - Cruzamento C
 };
-const int rua_inicio_o[8] = {LESTE, SUL, SUL, OESTE, OESTE, NORTE, NORTE, LESTE};
-const int sem_inicio[8]   = {SEMA, SEMA, SEMB, SEMB, SEMD, SEMD, SEMC, SEMC};
+const int rua_inicio_o[8] = { LESTE, SUL, SUL, OESTE, OESTE, NORTE, NORTE, LESTE };
+const int sem_inicio[8] = { SEMA, SEMA, SEMB, SEMB, SEMD, SEMD, SEMC, SEMC };
 const char sem2string[][8] = { "A", "B", "C", "D" };
 const char ori2string[][10] = { "NORTE", "SUL", "LESTE", "OESTE" };
 const char dir2string[][10] = { "FRENTE", "DIREITA", "ESQUERDA" };
 
-/// Próximo Semáforo
-// Mapa de trajeto:  Próximo Semáforo = SEM_MAP[Sentido do carro][Semáforo atual][Direção]
-// Direção: Frente = 0, Direita = 1, Esquerda = 2
+/// Pr?ximo Sem?foro
+// Mapa de trajeto:  Pr?ximo Sem?foro = SEM_MAP[Sentido do carro][Sem?foro atual][Dire??o]
+// Dire??o: Frente = 0, Direita = 1, Esquerda = 2
 // Sentido: NORTE = 0, SUL = 1, LESTE = 2, OESTE = 3
 const int SEMMAP_NEXT[][4][3] = {
 	{	// Caso o sentido do carro seja o NORTE = 0
@@ -131,7 +131,7 @@ const int SEMMAP_STOP[][4] = {
 	{FP_X2, FP_X4, FP_X2, FP_X4}, // OESTE = 2
 };
 
-/// Apartir de um sentido do carro, qual a proxima orientação após uma mudança
+/// Apartir de um sentido do carro, qual a proxima orienta??o ap?s uma mudan?a
 const int ORIENTATION_CHANGE[][3] = {
 	{NORTE, LESTE, OESTE},	// NORTE
 	{SUL  , OESTE, LESTE},	// SUL
@@ -139,8 +139,8 @@ const int ORIENTATION_CHANGE[][3] = {
 	{OESTE, NORTE, SUL},	// LESTE
 };
 
-// -1 indica fim que não há semáforo
-// 0 indica que há semáforo
+// -1 indica fim que n?o h? sem?foro
+// 0 indica que h? sem?foro
 static const int CROSSING_STEP[4][4][3] = {
 	{ // Sem. A
 		{-1, R_WE1_Y2 - 10, R_WE1_Y1},		// NORTE - Frente, Direita, Esquerda
@@ -170,7 +170,7 @@ static const int CROSSING_STEP[4][4][3] = {
 		{ 0, R_NS2_X2 - 10, R_NS2_X1},	    // SUL	 - Frente, Direita, Esquerda
 
 	},
-	
+
 };
 
 #endif // ! MAPPING_H

@@ -25,31 +25,31 @@
  * 1 tab == 4 spaces!
  */
 
-/******************************************************************************
- * This project provides two demo applications.  A simple blinky style project,
- * and a more comprehensive test and demo application.  The
- * mainCREATE_SIMPLE_BLINKY_DEMO_ONLY setting is used to select between the two.
- * The simply blinky demo is implemented and described in main_blinky.c.  The
- * more comprehensive test and demo application is implemented and described in
- * main_full.c.
- *
- * This file implements the code that is not demo specific, including the
- * hardware setup and FreeRTOS hook functions.
- *
- *******************************************************************************
- * NOTE: Windows will not be running the FreeRTOS demo threads continuously, so
- * do not expect to get real time behaviour from the FreeRTOS Windows port, or
- * this demo application.  Also, the timing information in the FreeRTOS+Trace
- * logs have no meaningful units.  See the documentation page for the Windows
- * port for further information:
- * http://www.freertos.org/FreeRTOS-Windows-Simulator-Emulator-for-Visual-Studio-and-Eclipse-MingW.html
- *
+ /******************************************************************************
+  * This project provides two demo applications.  A simple blinky style project,
+  * and a more comprehensive test and demo application.  The
+  * mainCREATE_SIMPLE_BLINKY_DEMO_ONLY setting is used to select between the two.
+  * The simply blinky demo is implemented and described in main_blinky.c.  The
+  * more comprehensive test and demo application is implemented and described in
+  * main_full.c.
+  *
+  * This file implements the code that is not demo specific, including the
+  * hardware setup and FreeRTOS hook functions.
+  *
+  *******************************************************************************
+  * NOTE: Windows will not be running the FreeRTOS demo threads continuously, so
+  * do not expect to get real time behaviour from the FreeRTOS Windows port, or
+  * this demo application.  Also, the timing information in the FreeRTOS+Trace
+  * logs have no meaningful units.  See the documentation page for the Windows
+  * port for further information:
+  * http://www.freertos.org/FreeRTOS-Windows-Simulator-Emulator-for-Visual-Studio-and-Eclipse-MingW.html
+  *
 
- *
- *******************************************************************************
- */
+  *
+  *******************************************************************************
+  */
 
-/* Standard includes. */
+  /* Standard includes. */
 #include <stdio.h>
 #include <stdlib.h>
 //#include <conio.h>
@@ -98,40 +98,40 @@ choice.  See http://www.freertos.org/a00111.html for an explanation. */
  * main_blinky() is used when mainCREATE_SIMPLE_BLINKY_DEMO_ONLY is set to 1.
  * main_full() is used when mainCREATE_SIMPLE_BLINKY_DEMO_ONLY is set to 0.
  */
-//extern void main_blinky( void );
-//extern void main_full( void );
+ //extern void main_blinky( void );
+ //extern void main_full( void );
 
-/*
- * Only the comprehensive demo uses application hook (callback) functions.  See
- * http://www.freertos.org/a00016.html for more information.
- */
-//void vFullDemoTickHookFunction( void );
-//void vFullDemoIdleFunction( void );
+ /*
+  * Only the comprehensive demo uses application hook (callback) functions.  See
+  * http://www.freertos.org/a00016.html for more information.
+  */
+  //void vFullDemoTickHookFunction( void );
+  //void vFullDemoIdleFunction( void );
 
-/*
- * This demo uses heap_5.c, so start by defining some heap regions.  It is not
- * necessary for this demo to use heap_5, as it could define one large heap
- * region.  Heap_5 is only used for test and example purposes.  See
- * http://www.freertos.org/a00111.html for an explanation.
- */
-static void  prvInitialiseHeap( void );
+  /*
+   * This demo uses heap_5.c, so start by defining some heap regions.  It is not
+   * necessary for this demo to use heap_5, as it could define one large heap
+   * region.  Heap_5 is only used for test and example purposes.  See
+   * http://www.freertos.org/a00111.html for an explanation.
+   */
+static void  prvInitialiseHeap(void);
 
 /*
  * Prototypes for the standard FreeRTOS application hook (callback) functions
  * implemented within this file.  See http://www.freertos.org/a00016.html .
  */
-void vApplicationMallocFailedHook( void );
-void vApplicationIdleHook( void );
-void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName );
-void vApplicationTickHook( void );
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
-void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize );
+void vApplicationMallocFailedHook(void);
+void vApplicationIdleHook(void);
+void vApplicationStackOverflowHook(TaskHandle_t pxTask, char* pcTaskName);
+void vApplicationTickHook(void);
+void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer, StackType_t** ppxIdleTaskStackBuffer, uint32_t* pulIdleTaskStackSize);
+void vApplicationGetTimerTaskMemory(StaticTask_t** ppxTimerTaskTCBBuffer, StackType_t** ppxTimerTaskStackBuffer, uint32_t* pulTimerTaskStackSize);
 
 /*
  * Writes trace data to a disk file when the trace recording is stopped.
  * This function will simply overwrite any trace files that already exist.
  */
-static void prvSaveTraceFile( void );
+static void prvSaveTraceFile(void);
 
 /*-----------------------------------------------------------*/
 
@@ -140,121 +140,14 @@ use a callback function to optionally provide the memory required by the idle
 and timer tasks.  This is the stack that will be used by the timer task.  It is
 declared here, as a global, so it can be checked by a test that is implemented
 in a different file. */
-StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
+StackType_t uxTimerTaskStack[configTIMER_TASK_STACK_DEPTH];
 
 /* Notes if the trace is running or not. */
 static BaseType_t xTraceRunning = pdTRUE;
 
 /*-----------------------------------------------------------*/
 
-#define NUM_CROSSINGS 4
-#define QT_ROTAS 4
-#define PHASE_DURATION_MS 5000 // 30 segundos
 
-typedef struct {
-	char id; // 'A', 'B', 'C', 'D'
-	SemaphoreHandle_t sem_NS_Straight;
-	SemaphoreHandle_t sem_EW_Straight;
-	SemaphoreHandle_t sem_NS_Left;
-	SemaphoreHandle_t sem_EW_Left;
-	int currentPhase;      // Fase atual do ciclo semafórico
-	int initialPhase;      // Fase inicial ao iniciar o ciclo
-} Intersection;
-
-Intersection intersections[NUM_CROSSINGS];
-
-// Função de Inicialização dos Cruzamentos
-
-void init_intersections() {
-	
-	char ids[NUM_CROSSINGS] = { 'A', 'B', 'C', 'D' };
-	// Fases iniciais para cada cruzamento
-	int initialPhases[NUM_CROSSINGS] = { 0, 1, 2, 3 };
-
-	for (int i = 0; i < NUM_CROSSINGS; i++) {
-		intersections[i].id = ids[i];
-		intersections[i].sem_NS_Straight = xSemaphoreCreateBinary();
-		intersections[i].sem_EW_Straight = xSemaphoreCreateBinary();
-		intersections[i].sem_NS_Left = xSemaphoreCreateBinary();
-		intersections[i].sem_EW_Left = xSemaphoreCreateBinary();
-		intersections[i].initialPhase = initialPhases[i];
-		intersections[i].currentPhase = intersections[i].initialPhase; // Define a fase atual como a fase inicial
-	}
-}
-
-// Função para Gerenciar as Fases dos Semáforos
-
-void manage_semaphores(Intersection* crossing) {
-	while (1) {
-		// Dependendo da fase atual, ativa o semáforo correspondente
-		switch (crossing->currentPhase) {
-		case 0:
-			// Fase 1: NS Straight disponível
-			xSemaphoreGive(crossing->sem_NS_Straight);
-			xSemaphoreTake(crossing->sem_EW_Left, 0);
-			xSemaphoreTake(crossing->sem_EW_Straight, 0);
-			xSemaphoreTake(crossing->sem_NS_Left, 0);
-			printf("Cruzamento %c: Fase 1 - NS Straight Ativado\n", crossing->id);
-			break;
-		case 1:
-			// Fase 2: EW Left disponível
-			xSemaphoreGive(crossing->sem_EW_Left);
-			xSemaphoreTake(crossing->sem_NS_Straight, 0);
-			xSemaphoreTake(crossing->sem_EW_Straight, 0);
-			xSemaphoreTake(crossing->sem_NS_Left, 0);
-			printf("Cruzamento %c: Fase 2 - EW Left Ativado\n", crossing->id);
-			break;
-		case 2:
-			// Fase 3: EW Straight disponível
-			xSemaphoreGive(crossing->sem_EW_Straight);
-			xSemaphoreTake(crossing->sem_NS_Straight, 0);
-			xSemaphoreTake(crossing->sem_EW_Left, 0);
-			xSemaphoreTake(crossing->sem_NS_Left, 0);
-			printf("Cruzamento %c: Fase 3 - EW Straight Ativado\n", crossing->id);
-			break;
-		case 3:
-			// Fase 4: NS Left disponível
-			xSemaphoreGive(crossing->sem_NS_Left);
-			xSemaphoreTake(crossing->sem_NS_Straight, 0);
-			xSemaphoreTake(crossing->sem_EW_Left, 0);
-			xSemaphoreTake(crossing->sem_EW_Straight, 0);
-			printf("Cruzamento %c: Fase 4 - NS Left Ativado\n", crossing->id);
-			break;
-		default:
-			// Reseta para a fase 0 caso ocorra algum erro
-			crossing->currentPhase = 0;
-			continue;
-		}
-
-		// Aguarda a duração da fase
-		vTaskDelay(pdMS_TO_TICKS(PHASE_DURATION_MS));
-
-		// Passa para a próxima fase
-		crossing->currentPhase = (crossing->currentPhase + 1) % 4;
-	}
-}
-
-// Funções das Tarefas para Cada Cruzamento
-
-void vCruzamentoATask(void* pvParameters) {
-	Intersection* crossing = &intersections[0];
-	manage_semaphores(crossing);
-}
-
-void vCruzamentoBTask(void* pvParameters) {
-	Intersection* crossing = &intersections[1];
-	manage_semaphores(crossing);
-}
-
-void vCruzamentoCTask(void* pvParameters) {
-	Intersection* crossing = &intersections[2];
-	manage_semaphores(crossing);
-}
-
-void vCruzamentoDTask(void* pvParameters) {
-	Intersection* crossing = &intersections[3];
-	manage_semaphores(crossing);
-}
 
 
 
@@ -293,7 +186,7 @@ void run_sdl_interface(void* arg) {
 
 
 	// Cria uma janela
-	SDL_Window* window = SDL_CreateWindow("Simulação de Rua", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 720, 720, SDL_WINDOW_SHOWN);
+	SDL_Window* window = SDL_CreateWindow("Simula??o de Rua", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 720, 720, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Erro ao criar janela: %s\n", SDL_GetError());
 		SDL_Quit();
@@ -319,7 +212,7 @@ void run_sdl_interface(void* arg) {
 		return;
 	}
 
-	// Loop principal da interface gráfica
+	// Loop principal da interface gr?fica
 
 	xSemaphoreGive(s_interface); // interface inicializada
 
@@ -337,7 +230,7 @@ void run_sdl_interface(void* arg) {
 		int mouseX, mouseY;
 		SDL_GetMouseState(&mouseX, &mouseY);
 
-		// Atualiza o texto da posição do mouse
+		// Atualiza o texto da posi??o do mouse
 		snprintf(mousePosText, sizeof(mousePosText), "Mouse: (%d, %d)", mouseX, mouseY);
 
 		/// ------ Renderizar Cenas -------
@@ -346,22 +239,22 @@ void run_sdl_interface(void* arg) {
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL); // Copia a textura da imagem de fundo
 
-		// Renderiza o texto da posição do mouse
+		// Renderiza o texto da posi??o do mouse
 		SDL_Texture* mousePosTexture = render_text(mousePosText, textcolor, renderer, font);
 		SDL_Rect textRect;
 		SDL_QueryTexture(mousePosTexture, NULL, NULL, &textRect.w, &textRect.h);
-		textRect.x = 10; // Posição X do texto
-		textRect.y = 10; // Posição Y do texto
-		
+		textRect.x = 10; // Posi??o X do texto
+		textRect.y = 10; // Posi??o Y do texto
+
 		// Renderiza os carros
 		for (int i = 0; i < vehicle_count; i++) {
 			SDL_SetRenderDrawColor(renderer, vehicles[i].color.r, vehicles[i].color.g, vehicles[i].color.b, 255);
-			SDL_Rect car_rect = { vehicles[i].x, vehicles[i].y, 10, 10};
+			SDL_Rect car_rect = { vehicles[i].x, vehicles[i].y, 10, 10 };
 			SDL_RenderFillRect(renderer, &car_rect);
 		}
-		
+
 		SDL_RenderCopy(renderer, mousePosTexture, NULL, &textRect); // Renderiza o overlay do texto
-		SDL_RenderPresent(renderer); // Exibe o conteúdo
+		SDL_RenderPresent(renderer); // Exibe o conte?do
 
 		/// !----- Renderizar Cenas ------!
 
@@ -383,8 +276,9 @@ void HelloTask(void* args) {
 	int count = 0;
 
 	while (1) {
-		//printf("Alô mundo cruel!\n");
-			fflush(stdout);
+		//xSemaphoreTake(intersections[0].sem_EW_Left, portMAX_DELAY);
+		//printf("Alo mundo cruel!\n");
+		fflush(stdout);
 
 		count++;
 		vTaskDelay(1000);
@@ -392,7 +286,7 @@ void HelloTask(void* args) {
 }
 #include <time.h>
 #include <math.h>
-int main( void )
+int main(void)
 {
 	srand(100);
 	/* This demo uses heap_5.c, so start by defining some heap regions.  heap_5
@@ -402,7 +296,7 @@ int main( void )
 
 	/* Initialise the trace recorder.  Use of the trace recorder is optional.
 	See http://www.FreeRTOS.org/trace for more information. */
-	vTraceEnable( TRC_START );
+	vTraceEnable(TRC_START);
 
 
 	s_interface = xSemaphoreCreateCounting(1, 0);
@@ -411,7 +305,7 @@ int main( void )
 
 	xTaskHandle HT, h_interface;
 	/* create task */
-	xTaskCreate(HelloTask, "HelloTask", configMINIMAL_STACK_SIZE, (void *)NULL, 1, &HT);
+	xTaskCreate(HelloTask, "HelloTask", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &HT);
 	xTaskCreate(run_sdl_interface, "Interface", 4064, (void*)NULL, 1, &h_interface);
 	xTaskCreate(vVehicleGeneratorTask, "VehicleGeneratorTask", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 
@@ -421,9 +315,9 @@ int main( void )
 	xTaskCreate(vCruzamentoCTask, "CruzamentoC", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 	xTaskCreate(vCruzamentoDTask, "CruzamentoD", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 
-	
+
 	vTaskStartScheduler();
-	
+
 
 
 
@@ -431,7 +325,7 @@ int main( void )
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationMallocFailedHook( void )
+void vApplicationMallocFailedHook(void)
 {
 	/* vApplicationMallocFailedHook() will only be called if
 	configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h.  It is a hook
@@ -445,11 +339,11 @@ void vApplicationMallocFailedHook( void )
 	(although it does not provide information on how the remaining heap might be
 	fragmented).  See http://www.freertos.org/a00111.html for more
 	information. */
-	vAssertCalled( __LINE__, __FILE__ );
+	vAssertCalled(__LINE__, __FILE__);
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationIdleHook( void )
+void vApplicationIdleHook(void)
 {
 	/* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
 	to 1 in FreeRTOSConfig.h.  It will be called on each iteration of the idle
@@ -476,46 +370,46 @@ void vApplicationIdleHook( void )
 		}
 	*/
 
-	#if ( mainCREATE_SIMPLE_BLINKY_DEMO_ONLY != 1 )
+#if ( mainCREATE_SIMPLE_BLINKY_DEMO_ONLY != 1 )
 	{
 		/* Call the idle task processing used by the full demo.  The simple
 		blinky demo does not use the idle task hook. */
 		vFullDemoIdleFunction();
 	}
-	#endif
+#endif
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
+void vApplicationStackOverflowHook(TaskHandle_t pxTask, char* pcTaskName)
 {
-	( void ) pcTaskName;
-	( void ) pxTask;
+	(void)pcTaskName;
+	(void)pxTask;
 
 	/* Run time stack overflow checking is performed if
 	configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
 	function is called if a stack overflow is detected.  This function is
 	provided as an example only as stack overflow checking does not function
 	when running the FreeRTOS Windows port. */
-	vAssertCalled( __LINE__, __FILE__ );
+	vAssertCalled(__LINE__, __FILE__);
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationTickHook( void )
+void vApplicationTickHook(void)
 {
 	/* This function will be called by each tick interrupt if
 	configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h.  User code can be
 	added here, but the tick hook is called from an interrupt context, so
 	code must not attempt to block, and only the interrupt safe FreeRTOS API
 	functions can be used (those that end in FromISR()). */
-	#if ( mainCREATE_SIMPLE_BLINKY_DEMO_ONLY != 1 )
+#if ( mainCREATE_SIMPLE_BLINKY_DEMO_ONLY != 1 )
 	{
 		vFullDemoTickHookFunction();
 	}
-	#endif /* mainCREATE_SIMPLE_BLINKY_DEMO_ONLY */
+#endif /* mainCREATE_SIMPLE_BLINKY_DEMO_ONLY */
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationDaemonTaskStartupHook( void )
+void vApplicationDaemonTaskStartupHook(void)
 {
 	/* This function will be called once only, when the daemon task starts to
 	execute	(sometimes called the timer task).  This is useful if the
@@ -524,27 +418,27 @@ void vApplicationDaemonTaskStartupHook( void )
 }
 /*-----------------------------------------------------------*/
 
-void vAssertCalled( unsigned long ulLine, const char * const pcFileName )
+void vAssertCalled(unsigned long ulLine, const char* const pcFileName)
 {
-static BaseType_t xPrinted = pdFALSE;
-volatile uint32_t ulSetToNonZeroInDebuggerToContinue = 0;
+	static BaseType_t xPrinted = pdFALSE;
+	volatile uint32_t ulSetToNonZeroInDebuggerToContinue = 0;
 
 	/* Called if an assertion passed to configASSERT() fails.  See
 	http://www.freertos.org/a00110.html#configASSERT for more information. */
 
 	/* Parameters are not used. */
-	( void ) ulLine;
-	( void ) pcFileName;
+	(void)ulLine;
+	(void)pcFileName;
 
-	printf( "ASSERT! Line %ld, file %s, GetLastError() %ld\r\n", ulLine, pcFileName, GetLastError() );
+	printf("ASSERT! Line %ld, file %s, GetLastError() %ld\r\n", ulLine, pcFileName, GetLastError());
 
- 	taskENTER_CRITICAL();
+	taskENTER_CRITICAL();
 	{
 		/* Stop the trace recording. */
-		if( xPrinted == pdFALSE )
+		if (xPrinted == pdFALSE)
 		{
 			xPrinted = pdTRUE;
-			if( xTraceRunning == pdTRUE )
+			if (xTraceRunning == pdTRUE)
 			{
 				vTraceStop();
 				prvSaveTraceFile();
@@ -554,79 +448,79 @@ volatile uint32_t ulSetToNonZeroInDebuggerToContinue = 0;
 		/* You can step out of this function to debug the assertion by using
 		the debugger to set ulSetToNonZeroInDebuggerToContinue to a non-zero
 		value. */
-		while( ulSetToNonZeroInDebuggerToContinue == 0 )
+		while (ulSetToNonZeroInDebuggerToContinue == 0)
 		{
-			__asm{ NOP };
-			__asm{ NOP };
+			__asm { NOP };
+			__asm { NOP };
 		}
 	}
 	taskEXIT_CRITICAL();
 }
 /*-----------------------------------------------------------*/
 
-static void prvSaveTraceFile( void )
+static void prvSaveTraceFile(void)
 {
-FILE* pxOutputFile;
+	FILE* pxOutputFile;
 
-	fopen_s( &pxOutputFile, "Trace.dump", "wb");
+	fopen_s(&pxOutputFile, "Trace.dump", "wb");
 
-	if( pxOutputFile != NULL )
+	if (pxOutputFile != NULL)
 	{
-		fwrite( RecorderDataPtr, sizeof( RecorderDataType ), 1, pxOutputFile );
-		fclose( pxOutputFile );
-		printf( "\r\nTrace output saved to Trace.dump\r\n" );
+		fwrite(RecorderDataPtr, sizeof(RecorderDataType), 1, pxOutputFile);
+		fclose(pxOutputFile);
+		printf("\r\nTrace output saved to Trace.dump\r\n");
 	}
 	else
 	{
-		printf( "\r\nFailed to create trace dump file\r\n" );
+		printf("\r\nFailed to create trace dump file\r\n");
 	}
 }
 /*-----------------------------------------------------------*/
 
-static void  prvInitialiseHeap( void )
+static void  prvInitialiseHeap(void)
 {
-/* The Windows demo could create one large heap region, in which case it would
-be appropriate to use heap_4.  However, purely for demonstration purposes,
-heap_5 is used instead, so start by defining some heap regions.  No
-initialisation is required when any other heap implementation is used.  See
-http://www.freertos.org/a00111.html for more information.
+	/* The Windows demo could create one large heap region, in which case it would
+	be appropriate to use heap_4.  However, purely for demonstration purposes,
+	heap_5 is used instead, so start by defining some heap regions.  No
+	initialisation is required when any other heap implementation is used.  See
+	http://www.freertos.org/a00111.html for more information.
 
-The xHeapRegions structure requires the regions to be defined in start address
-order, so this just creates one big array, then populates the structure with
-offsets into the array - with gaps in between and messy alignment just for test
-purposes. */
-static uint8_t ucHeap[ configTOTAL_HEAP_SIZE ];
-volatile uint32_t ulAdditionalOffset = 19; /* Just to prevent 'condition is always true' warnings in configASSERT(). */
-const HeapRegion_t xHeapRegions[] =
-{
-	/* Start address with dummy offsets						Size */
-	{ ucHeap + 1,											mainREGION_1_SIZE },
-	{ ucHeap + 15 + mainREGION_1_SIZE,						mainREGION_2_SIZE },
-	{ ucHeap + 19 + mainREGION_1_SIZE + mainREGION_2_SIZE,	mainREGION_3_SIZE },
-	{ NULL, 0 }
-};
+	The xHeapRegions structure requires the regions to be defined in start address
+	order, so this just creates one big array, then populates the structure with
+	offsets into the array - with gaps in between and messy alignment just for test
+	purposes. */
+	static uint8_t ucHeap[configTOTAL_HEAP_SIZE];
+	volatile uint32_t ulAdditionalOffset = 19; /* Just to prevent 'condition is always true' warnings in configASSERT(). */
+	const HeapRegion_t xHeapRegions[] =
+	{
+		/* Start address with dummy offsets						Size */
+		{ ucHeap + 1,											mainREGION_1_SIZE },
+		{ ucHeap + 15 + mainREGION_1_SIZE,						mainREGION_2_SIZE },
+		{ ucHeap + 19 + mainREGION_1_SIZE + mainREGION_2_SIZE,	mainREGION_3_SIZE },
+		{ NULL, 0 }
+	};
 
 	/* Sanity check that the sizes and offsets defined actually fit into the
 	array. */
-	configASSERT( ( ulAdditionalOffset + mainREGION_1_SIZE + mainREGION_2_SIZE + mainREGION_3_SIZE ) < configTOTAL_HEAP_SIZE );
+	configASSERT((ulAdditionalOffset + mainREGION_1_SIZE + mainREGION_2_SIZE + mainREGION_3_SIZE) < configTOTAL_HEAP_SIZE);
 
 	/* Prevent compiler warnings when configASSERT() is not defined. */
-	( void ) ulAdditionalOffset;
+	(void)ulAdditionalOffset;
 
-	vPortDefineHeapRegions( xHeapRegions );
+	vPortDefineHeapRegions(xHeapRegions);
 }
 /*-----------------------------------------------------------*/
 
 /* configUSE_STATIC_ALLOCATION is set to 1, so the application must provide an
 implementation of vApplicationGetIdleTaskMemory() to provide the memory that is
 used by the Idle task. */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer, StackType_t** ppxIdleTaskStackBuffer, uint32_t* pulIdleTaskStackSize)
 {
-/* If the buffers to be provided to the Idle task are declared inside this
-function then they must be declared static - otherwise they will be allocated on
-the stack and so not exists after this function exits. */
-static StaticTask_t xIdleTaskTCB;
-static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
+	/* If the buffers to be provided to the Idle task are declared inside this
+	function then they must be declared static - otherwise they will be allocated on
+	the stack and so not exists after this function exits. */
+	static StaticTask_t xIdleTaskTCB;
+	static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
 
 	/* Pass out a pointer to the StaticTask_t structure in which the Idle task's
 	state will be stored. */
@@ -645,12 +539,12 @@ static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
 /* configUSE_STATIC_ALLOCATION and configUSE_TIMERS are both set to 1, so the
 application must provide an implementation of vApplicationGetTimerTaskMemory()
 to provide the memory that is used by the Timer service task. */
-void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+void vApplicationGetTimerTaskMemory(StaticTask_t** ppxTimerTaskTCBBuffer, StackType_t** ppxTimerTaskStackBuffer, uint32_t* pulTimerTaskStackSize)
 {
-/* If the buffers to be provided to the Timer task are declared inside this
-function then they must be declared static - otherwise they will be allocated on
-the stack and so not exists after this function exits. */
-static StaticTask_t xTimerTaskTCB;
+	/* If the buffers to be provided to the Timer task are declared inside this
+	function then they must be declared static - otherwise they will be allocated on
+	the stack and so not exists after this function exits. */
+	static StaticTask_t xTimerTaskTCB;
 
 	/* Pass out a pointer to the StaticTask_t structure in which the Timer
 	task's state will be stored. */
@@ -664,4 +558,3 @@ static StaticTask_t xTimerTaskTCB;
 	configMINIMAL_STACK_SIZE is specified in words, not bytes. */
 	*pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
-
